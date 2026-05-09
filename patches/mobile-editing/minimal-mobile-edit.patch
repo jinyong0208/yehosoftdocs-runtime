@@ -1,0 +1,50 @@
+diff --git a/apps/documenteditor/mobile/src/controller/Main.jsx b/apps/documenteditor/mobile/src/controller/Main.jsx
+index fcc03ca2..019f0ea7 100644
+--- a/apps/documenteditor/mobile/src/controller/Main.jsx
++++ b/apps/documenteditor/mobile/src/controller/Main.jsx
+@@ -323,7 +323,7 @@ class MainController extends Component {
+                 else if ( editorConfig && editorConfig.mobileForceView !== undefined )
+                     isMobileForceView = editorConfig.mobileForceView;
+ 
+-                const isForceView = isMobileForceView ?? customization?.mobile?.forceView ?? true;
++                const isForceView = isMobileForceView ?? customization?.mobile?.forceView ?? false;
+ 
+                 if(customization?.mobileForceView !== undefined && customization?.mobileForceView !== null) {
+                     console.warn("Obsolete: The mobileForceView parameter is deprecated. Please use the forceView parameter from customization.mobile block");
+diff --git a/apps/documenteditor/mobile/src/lib/patch.jsx b/apps/documenteditor/mobile/src/lib/patch.jsx
+index 963aca45..1ee48e85 100644
+--- a/apps/documenteditor/mobile/src/lib/patch.jsx
++++ b/apps/documenteditor/mobile/src/lib/patch.jsx
+@@ -4,7 +4,7 @@ const EditorUIController = () => {
+ };
+ 
+ EditorUIController.isSupportEditFeature = () => {
+-    return false
++    return true
+ };
+ 
+ EditorUIController.getToolbarOptions = () => {
+diff --git a/apps/presentationeditor/mobile/src/lib/patch.jsx b/apps/presentationeditor/mobile/src/lib/patch.jsx
+index ec7b37a2..bfd87958 100644
+--- a/apps/presentationeditor/mobile/src/lib/patch.jsx
++++ b/apps/presentationeditor/mobile/src/lib/patch.jsx
+@@ -1,6 +1,6 @@
+ 
+ const EditorUIController = () => null;
+ 
+-EditorUIController.isSupportEditFeature = () => false;
++EditorUIController.isSupportEditFeature = () => true;
+ 
+ export default EditorUIController;
+diff --git a/apps/spreadsheeteditor/mobile/src/lib/patch.jsx b/apps/spreadsheeteditor/mobile/src/lib/patch.jsx
+index ec7b37a2..bfd87958 100644
+--- a/apps/spreadsheeteditor/mobile/src/lib/patch.jsx
++++ b/apps/spreadsheeteditor/mobile/src/lib/patch.jsx
+@@ -1,6 +1,6 @@
+ 
+ const EditorUIController = () => null;
+ 
+-EditorUIController.isSupportEditFeature = () => false;
++EditorUIController.isSupportEditFeature = () => true;
+ 
+ export default EditorUIController;

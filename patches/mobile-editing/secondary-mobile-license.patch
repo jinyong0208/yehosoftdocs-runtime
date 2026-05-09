@@ -1,0 +1,604 @@
+diff --git a/apps/documenteditor/main/locale/it.json b/apps/documenteditor/main/locale/it.json
+index e2b9eb76..adc13c09 100644
+--- a/apps/documenteditor/main/locale/it.json
++++ b/apps/documenteditor/main/locale/it.json
+@@ -3704,5 +3704,8 @@
+   "DE.Views.WatermarkSettingsDialog.tipFontSize": "Dimensione carattere",
+   "Common.Views.Header.tipFillStatus": "Filling status",
+   "DE.Controllers.Main.warnStartFilling": "Form filling is in progress.<br>File editing is not currently available.",
+-  "DE.Views.FormsTab.helpTextFillStatus": "This form is ready for role-based filling. Click on the status button to check the filling stage."
++  "DE.Views.FormsTab.helpTextFillStatus": "This form is ready for role-based filling. Click on the status button to check the filling stage.",
++  "Common.Views.PluginDlg.textDock": "Pin plugin",
++  "Common.Views.PluginPanel.textHidePanel": "Collapse plugin",
++  "Common.Views.PluginPanel.textUndock": "Unpin plugin"
+ }
+\ No newline at end of file
+diff --git a/apps/documenteditor/mobile/src/controller/Main.jsx b/apps/documenteditor/mobile/src/controller/Main.jsx
+index fcc03ca2..bc059c27 100644
+--- a/apps/documenteditor/mobile/src/controller/Main.jsx
++++ b/apps/documenteditor/mobile/src/controller/Main.jsx
+@@ -323,7 +323,7 @@ class MainController extends Component {
+                 else if ( editorConfig && editorConfig.mobileForceView !== undefined )
+                     isMobileForceView = editorConfig.mobileForceView;
+ 
+-                const isForceView = isMobileForceView ?? customization?.mobile?.forceView ?? true;
++                const isForceView = isMobileForceView ?? customization?.mobile?.forceView ?? false;
+ 
+                 if(customization?.mobileForceView !== undefined && customization?.mobileForceView !== null) {
+                     console.warn("Obsolete: The mobileForceView parameter is deprecated. Please use the forceView parameter from customization.mobile block");
+@@ -693,19 +693,22 @@ class MainController extends Component {
+         const isForm = appOptions.isForm;
+ 
+         if (appOptions.config.mode !== 'view' && !EditorUIController.isSupportEditFeature()) {
+-            let value = LocalStorage.getItem("de-opensource-warning");
+-            value = (value !== null) ? parseInt(value) : 0;
+-            const now = (new Date).getTime();
+-            if (now - value > 86400000) {
+-                LocalStorage.setItem("de-opensource-warning", now);
+-                f7.dialog.create({
+-                    title: _t.notcriticalErrorTitle,
+-                    text : _t.errorOpensource,
+-                    buttons: [{ text: _t.textOk }]
+-                }).open();
++            const licType = this._state.licenseType;
++            if (licType !== Asc.c_oLicenseResult.ConnectionsOS && licType !== Asc.c_oLicenseResult.UsersCountOS) {
++                let value = LocalStorage.getItem("de-opensource-warning");
++                value = (value !== null) ? parseInt(value) : 0;
++                const now = (new Date).getTime();
++                if (now - value > 86400000) {
++                    LocalStorage.setItem("de-opensource-warning", now);
++                    f7.dialog.create({
++                        title: _t.notcriticalErrorTitle,
++                        text : _t.errorOpensource,
++                        buttons: [{ text: _t.textOk }]
++                    }).open();
++                }
++                Common.Notifications.trigger('toolbar:activatecontrols');
++                return;
+             }
+-            Common.Notifications.trigger('toolbar:activatecontrols');
+-            return;
+         }
+ 
+         if (appOptions.config.mode === 'view') {
+diff --git a/apps/documenteditor/mobile/src/lib/patch.jsx b/apps/documenteditor/mobile/src/lib/patch.jsx
+index 963aca45..1ee48e85 100644
+--- a/apps/documenteditor/mobile/src/lib/patch.jsx
++++ b/apps/documenteditor/mobile/src/lib/patch.jsx
+@@ -4,7 +4,7 @@ const EditorUIController = () => {
+ };
+ 
+ EditorUIController.isSupportEditFeature = () => {
+-    return false
++    return true
+ };
+ 
+ EditorUIController.getToolbarOptions = () => {
+diff --git a/apps/documenteditor/mobile/src/store/appOptions.js b/apps/documenteditor/mobile/src/store/appOptions.js
+index 6d1f4fae..4085f714 100644
+--- a/apps/documenteditor/mobile/src/store/appOptions.js
++++ b/apps/documenteditor/mobile/src/store/appOptions.js
+@@ -178,7 +178,8 @@ export class storeAppOptions {
+             permissions.edit = permissions.review = false;
+         this.review = (permissions.review === undefined) ? (permissions.edit !== false) : permissions.review;
+         this.canAnalytics = params.asc_getIsAnalyticsEnable();
+-        this.canLicense = (licType === Asc.c_oLicenseResult.Success || licType === Asc.c_oLicenseResult.SuccessLimit);
++        this.canLicense = (licType === Asc.c_oLicenseResult.Success || licType === Asc.c_oLicenseResult.SuccessLimit ||
++                           licType === Asc.c_oLicenseResult.ConnectionsOS || licType === Asc.c_oLicenseResult.UsersCountOS);
+         this.isLightVersion = params.asc_getIsLight();
+         this.buildVersion = params.asc_getBuildVersion();
+         this.canCoAuthoring = !this.isLightVersion;
+diff --git a/apps/pdfeditor/main/locale/it.json b/apps/pdfeditor/main/locale/it.json
+index 92f9916d..8d9e12fb 100644
+--- a/apps/pdfeditor/main/locale/it.json
++++ b/apps/pdfeditor/main/locale/it.json
+@@ -2040,5 +2040,8 @@
+   "PDFE.Views.ViewTab.tipFitToPage": "Adatta alla pagina",
+   "PDFE.Views.ViewTab.tipFitToWidth": "Adatta alla larghezza",
+   "PDFE.Views.ViewTab.tipHeadings": "Intestazioni",
+-  "PDFE.Views.ViewTab.tipInterfaceTheme": "Tema dell'interfaccia"
++  "PDFE.Views.ViewTab.tipInterfaceTheme": "Tema dell'interfaccia",
++  "Common.Views.PluginDlg.textDock": "Pin plugin",
++  "Common.Views.PluginPanel.textHidePanel": "Collapse plugin",
++  "Common.Views.PluginPanel.textUndock": "Unpin plugin"
+ }
+\ No newline at end of file
+diff --git a/apps/presentationeditor/main/locale/it.json b/apps/presentationeditor/main/locale/it.json
+index d2a3cc4a..230d255e 100644
+--- a/apps/presentationeditor/main/locale/it.json
++++ b/apps/presentationeditor/main/locale/it.json
+@@ -2985,5 +2985,8 @@
+   "PE.Views.ViewTab.tipMacros": "Macro",
+   "PE.Views.ViewTab.tipNormal": "Normale",
+   "PE.Views.ViewTab.tipSelectTool": "Seleziona strumento",
+-  "PE.Views.ViewTab.tipSlideMaster": "Slide master"
++  "PE.Views.ViewTab.tipSlideMaster": "Slide master",
++  "Common.Views.PluginDlg.textDock": "Pin plugin",
++  "Common.Views.PluginPanel.textHidePanel": "Collapse plugin",
++  "Common.Views.PluginPanel.textUndock": "Unpin plugin"
+ }
+\ No newline at end of file
+diff --git a/apps/presentationeditor/mobile/src/controller/Main.jsx b/apps/presentationeditor/mobile/src/controller/Main.jsx
+index ad86c59a..cb8b6d50 100644
+--- a/apps/presentationeditor/mobile/src/controller/Main.jsx
++++ b/apps/presentationeditor/mobile/src/controller/Main.jsx
+@@ -661,19 +661,22 @@ class MainController extends Component {
+ 
+         const appOptions = this.props.storeAppOptions;
+         if (appOptions.config.mode !== 'view' && !EditorUIController.isSupportEditFeature()) {
+-            let value = LocalStorage.getItem("pe-opensource-warning");
+-            value = (value !== null) ? parseInt(value) : 0;
+-            const now = (new Date).getTime();
+-            if (now - value > 86400000) {
+-                LocalStorage.setItem("pe-opensource-warning", now);
+-                f7.dialog.create({
+-                    title: _t.notcriticalErrorTitle,
+-                    text : _t.errorOpensource,
+-                    buttons: [{ text: _t.textOk }]
+-                }).open();
++            const licType = this._state.licenseType;
++            if (licType !== Asc.c_oLicenseResult.ConnectionsOS && licType !== Asc.c_oLicenseResult.UsersCountOS) {
++                let value = LocalStorage.getItem("pe-opensource-warning");
++                value = (value !== null) ? parseInt(value) : 0;
++                const now = (new Date).getTime();
++                if (now - value > 86400000) {
++                    LocalStorage.setItem("pe-opensource-warning", now);
++                    f7.dialog.create({
++                        title: _t.notcriticalErrorTitle,
++                        text : _t.errorOpensource,
++                        buttons: [{ text: _t.textOk }]
++                    }).open();
++                }
++                Common.Notifications.trigger('toolbar:activatecontrols');
++                return;
+             }
+-            Common.Notifications.trigger('toolbar:activatecontrols');
+-            return;
+         }
+ 
+         if (appOptions.config.mode === 'view') {
+diff --git a/apps/presentationeditor/mobile/src/lib/patch.jsx b/apps/presentationeditor/mobile/src/lib/patch.jsx
+index ec7b37a2..bfd87958 100644
+--- a/apps/presentationeditor/mobile/src/lib/patch.jsx
++++ b/apps/presentationeditor/mobile/src/lib/patch.jsx
+@@ -1,6 +1,6 @@
+ 
+ const EditorUIController = () => null;
+ 
+-EditorUIController.isSupportEditFeature = () => false;
++EditorUIController.isSupportEditFeature = () => true;
+ 
+ export default EditorUIController;
+diff --git a/apps/presentationeditor/mobile/src/store/appOptions.js b/apps/presentationeditor/mobile/src/store/appOptions.js
+index d7db96ab..de3bbcb3 100644
+--- a/apps/presentationeditor/mobile/src/store/appOptions.js
++++ b/apps/presentationeditor/mobile/src/store/appOptions.js
+@@ -109,7 +109,8 @@ export class storeAppOptions {
+             permissions.edit = false;
+         this.review = (permissions.review === undefined) ? (permissions.edit !== false) : permissions.review;
+         this.canAnalytics = params.asc_getIsAnalyticsEnable();
+-        this.canLicense = (licType === Asc.c_oLicenseResult.Success || licType === Asc.c_oLicenseResult.SuccessLimit);
++        this.canLicense = (licType === Asc.c_oLicenseResult.Success || licType === Asc.c_oLicenseResult.SuccessLimit ||
++                           licType === Asc.c_oLicenseResult.ConnectionsOS || licType === Asc.c_oLicenseResult.UsersCountOS);
+         this.isLightVersion = params.asc_getIsLight();
+         this.buildVersion = params.asc_getBuildVersion();
+         this.canCoAuthoring = !this.isLightVersion;
+diff --git a/apps/spreadsheeteditor/main/locale/it.json b/apps/spreadsheeteditor/main/locale/it.json
+index eea0bce9..bc110ca0 100644
+--- a/apps/spreadsheeteditor/main/locale/it.json
++++ b/apps/spreadsheeteditor/main/locale/it.json
+@@ -4573,5 +4573,8 @@
+   "SSE.Views.WBProtection.txtProtectWB": "Proteggere libro di lavoro",
+   "SSE.Views.WBProtection.txtSheetUnlockDescription": "Inserisci una password per rimuovere la protezione del foglio",
+   "SSE.Views.WBProtection.txtSheetUnlockTitle": "Rimuovi la protezione del foglio",
+-  "SSE.Views.WBProtection.txtWBUnlockDescription": "Inserisci una password per rimuovere la protezione del libro di lavoro"
++  "SSE.Views.WBProtection.txtWBUnlockDescription": "Inserisci una password per rimuovere la protezione del libro di lavoro",
++  "Common.Views.PluginDlg.textDock": "Pin plugin",
++  "Common.Views.PluginPanel.textHidePanel": "Collapse plugin",
++  "Common.Views.PluginPanel.textUndock": "Unpin plugin"
+ }
+\ No newline at end of file
+diff --git a/apps/spreadsheeteditor/mobile/src/controller/Main.jsx b/apps/spreadsheeteditor/mobile/src/controller/Main.jsx
+index d49bb7f0..96021149 100644
+--- a/apps/spreadsheeteditor/mobile/src/controller/Main.jsx
++++ b/apps/spreadsheeteditor/mobile/src/controller/Main.jsx
+@@ -860,19 +860,22 @@ class MainController extends Component {
+ 
+         const appOptions = this.props.storeAppOptions;
+         if (appOptions.config.mode !== 'view' && !EditorUIController.isSupportEditFeature()) {
+-            let value = LocalStorage.getItem("sse-opensource-warning");
+-            value = (value !== null) ? parseInt(value) : 0;
+-            const now = (new Date).getTime();
+-            if (now - value > 86400000) {
+-                LocalStorage.setItem("sse-opensource-warning", now);
+-                f7.dialog.create({
+-                    title: _t.notcriticalErrorTitle,
+-                    text : _t.errorOpensource,
+-                    buttons: [{ text: _t.textOk }]
+-                }).open();
++            const licType = this._state.licenseType;
++            if (licType !== Asc.c_oLicenseResult.ConnectionsOS && licType !== Asc.c_oLicenseResult.UsersCountOS) {
++                let value = LocalStorage.getItem("sse-opensource-warning");
++                value = (value !== null) ? parseInt(value) : 0;
++                const now = (new Date).getTime();
++                if (now - value > 86400000) {
++                    LocalStorage.setItem("sse-opensource-warning", now);
++                    f7.dialog.create({
++                        title: _t.notcriticalErrorTitle,
++                        text : _t.errorOpensource,
++                        buttons: [{ text: _t.textOk }]
++                    }).open();
++                }
++                Common.Notifications.trigger('toolbar:activatecontrols');
++                return;
+             }
+-            Common.Notifications.trigger('toolbar:activatecontrols');
+-            return;
+         }
+ 
+         if (appOptions.config.mode === 'view') {
+diff --git a/apps/spreadsheeteditor/mobile/src/lib/patch.jsx b/apps/spreadsheeteditor/mobile/src/lib/patch.jsx
+index ec7b37a2..bfd87958 100644
+--- a/apps/spreadsheeteditor/mobile/src/lib/patch.jsx
++++ b/apps/spreadsheeteditor/mobile/src/lib/patch.jsx
+@@ -1,6 +1,6 @@
+ 
+ const EditorUIController = () => null;
+ 
+-EditorUIController.isSupportEditFeature = () => false;
++EditorUIController.isSupportEditFeature = () => true;
+ 
+ export default EditorUIController;
+diff --git a/apps/spreadsheeteditor/mobile/src/store/appOptions.js b/apps/spreadsheeteditor/mobile/src/store/appOptions.js
+index be4ea3d9..095b1f4b 100644
+--- a/apps/spreadsheeteditor/mobile/src/store/appOptions.js
++++ b/apps/spreadsheeteditor/mobile/src/store/appOptions.js
+@@ -120,7 +120,8 @@ export class storeAppOptions {
+         this.canModifyFilter = permissions.modifyFilter !== false;
+         this.canAutosave = true;
+         this.canAnalytics = params.asc_getIsAnalyticsEnable();
+-        this.canLicense = (licType === Asc.c_oLicenseResult.Success || licType === Asc.c_oLicenseResult.SuccessLimit);
++        this.canLicense = (licType === Asc.c_oLicenseResult.Success || licType === Asc.c_oLicenseResult.SuccessLimit ||
++                           licType === Asc.c_oLicenseResult.ConnectionsOS || licType === Asc.c_oLicenseResult.UsersCountOS);
+         this.isLightVersion = params.asc_getIsLight();
+         this.buildVersion = params.asc_getBuildVersion();
+         this.canCoAuthoring = !this.isLightVersion;
+diff --git a/apps/visioeditor/main/locale/ar.json b/apps/visioeditor/main/locale/ar.json
+index 947f0e7d..1f97c7fd 100644
+--- a/apps/visioeditor/main/locale/ar.json
++++ b/apps/visioeditor/main/locale/ar.json
+@@ -418,5 +418,8 @@
+   "VE.Views.ViewTab.textZoom": "تكبير",
+   "VE.Views.ViewTab.tipFitPage": "ملائم للصفحة",
+   "VE.Views.ViewTab.tipFitWidth": "ملائم للعرض",
+-  "VE.Views.ViewTab.tipInterfaceTheme": "سمة الواجهة"
++  "VE.Views.ViewTab.tipInterfaceTheme": "سمة الواجهة",
++  "Common.Views.PluginDlg.textDock": "Pin plugin",
++  "Common.Views.PluginPanel.textUndock": "Unpin plugin",
++  "Common.Views.PluginPanel.textHidePanel": "Collapse plugin"
+ }
+\ No newline at end of file
+diff --git a/apps/visioeditor/main/locale/de.json b/apps/visioeditor/main/locale/de.json
+index cb31cf76..dcd50244 100644
+--- a/apps/visioeditor/main/locale/de.json
++++ b/apps/visioeditor/main/locale/de.json
+@@ -418,5 +418,8 @@
+   "VE.Views.ViewTab.textZoom": "Zoom",
+   "VE.Views.ViewTab.tipFitPage": "Seite anpassen",
+   "VE.Views.ViewTab.tipFitWidth": "Breite anpassen",
+-  "VE.Views.ViewTab.tipInterfaceTheme": "Thema der Benutzeroberfläche"
++  "VE.Views.ViewTab.tipInterfaceTheme": "Thema der Benutzeroberfläche",
++  "Common.Views.PluginDlg.textDock": "Pin plugin",
++  "Common.Views.PluginPanel.textUndock": "Unpin plugin",
++  "Common.Views.PluginPanel.textHidePanel": "Collapse plugin"
+ }
+\ No newline at end of file
+diff --git a/apps/visioeditor/main/locale/el.json b/apps/visioeditor/main/locale/el.json
+index 294f15fe..66ac946e 100644
+--- a/apps/visioeditor/main/locale/el.json
++++ b/apps/visioeditor/main/locale/el.json
+@@ -418,5 +418,8 @@
+   "VE.Views.ViewTab.textZoom": "Εστίαση",
+   "VE.Views.ViewTab.tipFitPage": "Προσαρμογή στη σελίδα",
+   "VE.Views.ViewTab.tipFitWidth": "Προσαρμογή στο πλάτος",
+-  "VE.Views.ViewTab.tipInterfaceTheme": "Θέμα διεπαφής"
++  "VE.Views.ViewTab.tipInterfaceTheme": "Θέμα διεπαφής",
++  "Common.Views.PluginDlg.textDock": "Pin plugin",
++  "Common.Views.PluginPanel.textUndock": "Unpin plugin",
++  "Common.Views.PluginPanel.textHidePanel": "Collapse plugin"
+ }
+\ No newline at end of file
+diff --git a/apps/visioeditor/main/locale/es.json b/apps/visioeditor/main/locale/es.json
+index b273707c..45c9d8c8 100644
+--- a/apps/visioeditor/main/locale/es.json
++++ b/apps/visioeditor/main/locale/es.json
+@@ -418,5 +418,8 @@
+   "VE.Views.ViewTab.textZoom": "Ampliación",
+   "VE.Views.ViewTab.tipFitPage": "Ajustar a la página",
+   "VE.Views.ViewTab.tipFitWidth": "Ajustar al ancho",
+-  "VE.Views.ViewTab.tipInterfaceTheme": "Tema de la interfaz"
++  "VE.Views.ViewTab.tipInterfaceTheme": "Tema de la interfaz",
++  "Common.Views.PluginDlg.textDock": "Pin plugin",
++  "Common.Views.PluginPanel.textUndock": "Unpin plugin",
++  "Common.Views.PluginPanel.textHidePanel": "Collapse plugin"
+ }
+\ No newline at end of file
+diff --git a/apps/visioeditor/main/locale/fr.json b/apps/visioeditor/main/locale/fr.json
+index 6cd64bcc..912683ef 100644
+--- a/apps/visioeditor/main/locale/fr.json
++++ b/apps/visioeditor/main/locale/fr.json
+@@ -418,5 +418,8 @@
+   "VE.Views.ViewTab.textZoom": "Zoom",
+   "VE.Views.ViewTab.tipFitPage": "Ajuster à la page",
+   "VE.Views.ViewTab.tipFitWidth": "Ajuster à la largeur",
+-  "VE.Views.ViewTab.tipInterfaceTheme": "Thème d'interface"
++  "VE.Views.ViewTab.tipInterfaceTheme": "Thème d'interface",
++  "Common.Views.PluginDlg.textDock": "Pin plugin",
++  "Common.Views.PluginPanel.textUndock": "Unpin plugin",
++  "Common.Views.PluginPanel.textHidePanel": "Collapse plugin"
+ }
+\ No newline at end of file
+diff --git a/apps/visioeditor/main/locale/he.json b/apps/visioeditor/main/locale/he.json
+index de34738a..7e7a753c 100644
+--- a/apps/visioeditor/main/locale/he.json
++++ b/apps/visioeditor/main/locale/he.json
+@@ -418,5 +418,8 @@
+   "VE.Views.ViewTab.textZoom": "תקריב",
+   "VE.Views.ViewTab.tipFitPage": "התאמה לדף",
+   "VE.Views.ViewTab.tipFitWidth": "התאמה לרוחב",
+-  "VE.Views.ViewTab.tipInterfaceTheme": "ערכת נושא של הממשק"
++  "VE.Views.ViewTab.tipInterfaceTheme": "ערכת נושא של הממשק",
++  "Common.Views.PluginDlg.textDock": "Pin plugin",
++  "Common.Views.PluginPanel.textUndock": "Unpin plugin",
++  "Common.Views.PluginPanel.textHidePanel": "Collapse plugin"
+ }
+\ No newline at end of file
+diff --git a/apps/visioeditor/main/locale/hy.json b/apps/visioeditor/main/locale/hy.json
+index 5c216b61..4033311c 100644
+--- a/apps/visioeditor/main/locale/hy.json
++++ b/apps/visioeditor/main/locale/hy.json
+@@ -418,5 +418,8 @@
+   "VE.Views.ViewTab.textZoom": "Խոշորացնել",
+   "VE.Views.ViewTab.tipFitPage": "Հարմարեցնել էջին",
+   "VE.Views.ViewTab.tipFitWidth": "Հարմարեցնել լայնությանը",
+-  "VE.Views.ViewTab.tipInterfaceTheme": "Ինտերֆեյսի ոճ"
++  "VE.Views.ViewTab.tipInterfaceTheme": "Ինտերֆեյսի ոճ",
++  "Common.Views.PluginDlg.textDock": "Pin plugin",
++  "Common.Views.PluginPanel.textUndock": "Unpin plugin",
++  "Common.Views.PluginPanel.textHidePanel": "Collapse plugin"
+ }
+\ No newline at end of file
+diff --git a/apps/visioeditor/main/locale/it.json b/apps/visioeditor/main/locale/it.json
+index 8e1ff2d7..8102b6ef 100644
+--- a/apps/visioeditor/main/locale/it.json
++++ b/apps/visioeditor/main/locale/it.json
+@@ -418,5 +418,8 @@
+   "VE.Views.ViewTab.textZoom": "Zoom",
+   "VE.Views.ViewTab.tipFitPage": "Adatta alla pagina",
+   "VE.Views.ViewTab.tipFitWidth": "Adatta alla larghezza",
+-  "VE.Views.ViewTab.tipInterfaceTheme": "Tema dell'interfaccia"
++  "VE.Views.ViewTab.tipInterfaceTheme": "Tema dell'interfaccia",
++  "Common.Views.PluginDlg.textDock": "Pin plugin",
++  "Common.Views.PluginPanel.textUndock": "Unpin plugin",
++  "Common.Views.PluginPanel.textHidePanel": "Collapse plugin"
+ }
+\ No newline at end of file
+diff --git a/apps/visioeditor/main/locale/ja.json b/apps/visioeditor/main/locale/ja.json
+index 1633135e..30b4cb0e 100644
+--- a/apps/visioeditor/main/locale/ja.json
++++ b/apps/visioeditor/main/locale/ja.json
+@@ -418,5 +418,8 @@
+   "VE.Views.ViewTab.textZoom": "拡大図",
+   "VE.Views.ViewTab.tipFitPage": "ページに合わせる",
+   "VE.Views.ViewTab.tipFitWidth": "幅に合わせる",
+-  "VE.Views.ViewTab.tipInterfaceTheme": "インターフェースのテーマ"
++  "VE.Views.ViewTab.tipInterfaceTheme": "インターフェースのテーマ",
++  "Common.Views.PluginDlg.textDock": "Pin plugin",
++  "Common.Views.PluginPanel.textUndock": "Unpin plugin",
++  "Common.Views.PluginPanel.textHidePanel": "Collapse plugin"
+ }
+\ No newline at end of file
+diff --git a/apps/visioeditor/main/locale/pt.json b/apps/visioeditor/main/locale/pt.json
+index d2c10936..048b50c1 100644
+--- a/apps/visioeditor/main/locale/pt.json
++++ b/apps/visioeditor/main/locale/pt.json
+@@ -418,5 +418,8 @@
+   "VE.Views.ViewTab.textZoom": "Zoom",
+   "VE.Views.ViewTab.tipFitPage": "Ajustar a página",
+   "VE.Views.ViewTab.tipFitWidth": "Ajustar à largura",
+-  "VE.Views.ViewTab.tipInterfaceTheme": "Tema de interface"
++  "VE.Views.ViewTab.tipInterfaceTheme": "Tema de interface",
++  "Common.Views.PluginDlg.textDock": "Pin plugin",
++  "Common.Views.PluginPanel.textUndock": "Unpin plugin",
++  "Common.Views.PluginPanel.textHidePanel": "Collapse plugin"
+ }
+\ No newline at end of file
+diff --git a/apps/visioeditor/main/locale/ro.json b/apps/visioeditor/main/locale/ro.json
+index a1eed5af..7dd1d913 100644
+--- a/apps/visioeditor/main/locale/ro.json
++++ b/apps/visioeditor/main/locale/ro.json
+@@ -418,5 +418,8 @@
+   "VE.Views.ViewTab.textZoom": "Zoom",
+   "VE.Views.ViewTab.tipFitPage": "Portivire la pagina",
+   "VE.Views.ViewTab.tipFitWidth": "Potrivire lățime",
+-  "VE.Views.ViewTab.tipInterfaceTheme": "Tema de interfață"
++  "VE.Views.ViewTab.tipInterfaceTheme": "Tema de interfață",
++  "Common.Views.PluginDlg.textDock": "Pin plugin",
++  "Common.Views.PluginPanel.textUndock": "Unpin plugin",
++  "Common.Views.PluginPanel.textHidePanel": "Collapse plugin"
+ }
+\ No newline at end of file
+diff --git a/apps/visioeditor/main/locale/ru.json b/apps/visioeditor/main/locale/ru.json
+index 63c4f25f..044634cd 100644
+--- a/apps/visioeditor/main/locale/ru.json
++++ b/apps/visioeditor/main/locale/ru.json
+@@ -418,5 +418,8 @@
+   "VE.Views.ViewTab.textZoom": "Масштаб",
+   "VE.Views.ViewTab.tipFitPage": "По размеру страницы",
+   "VE.Views.ViewTab.tipFitWidth": "По ширине",
+-  "VE.Views.ViewTab.tipInterfaceTheme": "Тема интерфейса"
++  "VE.Views.ViewTab.tipInterfaceTheme": "Тема интерфейса",
++  "Common.Views.PluginDlg.textDock": "Pin plugin",
++  "Common.Views.PluginPanel.textUndock": "Unpin plugin",
++  "Common.Views.PluginPanel.textHidePanel": "Collapse plugin"
+ }
+\ No newline at end of file
+diff --git a/apps/visioeditor/main/locale/sq.json b/apps/visioeditor/main/locale/sq.json
+index b1f5ffdf..8d057542 100644
+--- a/apps/visioeditor/main/locale/sq.json
++++ b/apps/visioeditor/main/locale/sq.json
+@@ -418,5 +418,8 @@
+   "VE.Views.ViewTab.textZoom": "Zmadhoj",
+   "VE.Views.ViewTab.tipFitPage": "Përshtatet me faqen",
+   "VE.Views.ViewTab.tipFitWidth": "Përshtatet me gjerësinë",
+-  "VE.Views.ViewTab.tipInterfaceTheme": "Temë e ndërfaqes"
++  "VE.Views.ViewTab.tipInterfaceTheme": "Temë e ndërfaqes",
++  "Common.Views.PluginDlg.textDock": "Pin plugin",
++  "Common.Views.PluginPanel.textUndock": "Unpin plugin",
++  "Common.Views.PluginPanel.textHidePanel": "Collapse plugin"
+ }
+\ No newline at end of file
+diff --git a/apps/visioeditor/main/locale/sr-cyrl.json b/apps/visioeditor/main/locale/sr-cyrl.json
+index 269ce291..fb49afd3 100644
+--- a/apps/visioeditor/main/locale/sr-cyrl.json
++++ b/apps/visioeditor/main/locale/sr-cyrl.json
+@@ -418,5 +418,8 @@
+   "VE.Views.ViewTab.textZoom": "Зумирај",
+   "VE.Views.ViewTab.tipFitPage": "Прилагоди страници",
+   "VE.Views.ViewTab.tipFitWidth": "Прилагоди ширини",
+-  "VE.Views.ViewTab.tipInterfaceTheme": "Тема интерфејса"
++  "VE.Views.ViewTab.tipInterfaceTheme": "Тема интерфејса",
++  "Common.Views.PluginDlg.textDock": "Pin plugin",
++  "Common.Views.PluginPanel.textUndock": "Unpin plugin",
++  "Common.Views.PluginPanel.textHidePanel": "Collapse plugin"
+ }
+\ No newline at end of file
+diff --git a/apps/visioeditor/main/locale/sr.json b/apps/visioeditor/main/locale/sr.json
+index 2ac6f2e6..91209fb7 100644
+--- a/apps/visioeditor/main/locale/sr.json
++++ b/apps/visioeditor/main/locale/sr.json
+@@ -418,5 +418,8 @@
+   "VE.Views.ViewTab.textZoom": "Zumiranje",
+   "VE.Views.ViewTab.tipFitPage": "Prilagodi stranici",
+   "VE.Views.ViewTab.tipFitWidth": "Prilagodi širini",
+-  "VE.Views.ViewTab.tipInterfaceTheme": "Tema interfejsa"
++  "VE.Views.ViewTab.tipInterfaceTheme": "Tema interfejsa",
++  "Common.Views.PluginDlg.textDock": "Pin plugin",
++  "Common.Views.PluginPanel.textUndock": "Unpin plugin",
++  "Common.Views.PluginPanel.textHidePanel": "Collapse plugin"
+ }
+\ No newline at end of file
+diff --git a/apps/visioeditor/main/locale/zh.json b/apps/visioeditor/main/locale/zh.json
+index e3e805c1..0e1946e2 100644
+--- a/apps/visioeditor/main/locale/zh.json
++++ b/apps/visioeditor/main/locale/zh.json
+@@ -418,5 +418,8 @@
+   "VE.Views.ViewTab.textZoom": "缩放",
+   "VE.Views.ViewTab.tipFitPage": "适合页面",
+   "VE.Views.ViewTab.tipFitWidth": "适应宽度",
+-  "VE.Views.ViewTab.tipInterfaceTheme": "界面主题"
++  "VE.Views.ViewTab.tipInterfaceTheme": "界面主题",
++  "Common.Views.PluginDlg.textDock": "Pin plugin",
++  "Common.Views.PluginPanel.textUndock": "Unpin plugin",
++  "Common.Views.PluginPanel.textHidePanel": "Collapse plugin"
+ }
+\ No newline at end of file
+diff --git a/build/common.json b/build/common.json
+index eecc4be8..c2886f63 100644
+--- a/build/common.json
++++ b/build/common.json
+@@ -1,7 +1,7 @@
+ {
+     "name": "common",
+     "version": "4.3.0",
+-    "build": 39,
++    "build": 40,
+     "homepage": "http://www.onlyoffice.com",
+     "private": true,
+     "sdk": {
+@@ -17,7 +17,7 @@
+                         "src": [
+                             "Images/*",
+                             "Images/placeholders/*",
+-							"Images/content_controls/*",
++                            "Images/content_controls/*",
+                             "Native/*.js",
+                             "libfont/js/fonts.*",
+                             "libfont/wasm/fonts.*"
+@@ -289,4 +289,4 @@
+             "deploy-ace"
+         ]
+     }
+-}
++}
+\ No newline at end of file
+diff --git a/build/documenteditor.json b/build/documenteditor.json
+index 8ef204a5..dafbffb4 100644
+--- a/build/documenteditor.json
++++ b/build/documenteditor.json
+@@ -1,7 +1,7 @@
+ {
+     "name": "documenteditor",
+     "version": "4.3.0",
+-    "build": 1150,
++    "build": 1151,
+     "homepage": "http://www.onlyoffice.com",
+     "private": true,
+     "main": {
+@@ -94,7 +94,7 @@
+                 }
+             },
+             "postload": {
+-                "options":{
++                "options": {
+                     "baseUrl": "../apps/",
+                     "optimize": "none",
+                     "name": "../apps/documenteditor/main/app_pack.js",
+diff --git a/build/pdfeditor.json b/build/pdfeditor.json
+index 55e1bb7a..33f02d8f 100644
+--- a/build/pdfeditor.json
++++ b/build/pdfeditor.json
+@@ -1,7 +1,7 @@
+ {
+     "name": "pdfeditor",
+     "version": "4.3.0",
+-    "build": 1152,
++    "build": 1153,
+     "homepage": "http://www.onlyoffice.com",
+     "private": true,
+     "main": {
+diff --git a/build/presentationeditor.json b/build/presentationeditor.json
+index ad9999eb..60195fc5 100644
+--- a/build/presentationeditor.json
++++ b/build/presentationeditor.json
+@@ -1,7 +1,7 @@
+ {
+     "name": "presentationeditor",
+     "version": "4.3.0",
+-    "build": 790,
++    "build": 791,
+     "homepage": "http://www.onlyoffice.com",
+     "private": true,
+     "main": {
+diff --git a/build/spreadsheeteditor.json b/build/spreadsheeteditor.json
+index 4d0e8b03..80a0b117 100644
+--- a/build/spreadsheeteditor.json
++++ b/build/spreadsheeteditor.json
+@@ -1,7 +1,7 @@
+ {
+     "name": "spreadsheeteditor",
+     "version": "4.3.0",
+-    "build": 903,
++    "build": 904,
+     "homepage": "http://www.onlyoffice.com",
+     "private": true,
+     "main": {
+@@ -94,7 +94,7 @@
+                 }
+             },
+             "postload": {
+-                "options":{
++                "options": {
+                     "baseUrl": "../apps/",
+                     "optimize": "none",
+                     "name": "../apps/spreadsheeteditor/main/app_pack.js",

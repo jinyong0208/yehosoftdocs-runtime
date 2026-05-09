@@ -1,0 +1,14 @@
+FROM yehosoft/yehosoftdocs-runtime:8.3.3-edms3
+LABEL maintainer="Yehosoft Engineering"
+LABEL description="YehosoftDocs Branding Fix (Pure Web-Apps Layering)"
+
+# 1. Overlay only the branded and patched web-apps
+# This ensures we don't break the working server environment from the base image.
+COPY sources/web-apps/deploy/web-apps /var/www/onlyoffice/documentserver/web-apps
+
+# 2. Fix permissions for the web-apps directory
+RUN chown -R ds:ds /var/www/onlyoffice/documentserver/web-apps
+
+# 3. Add font refresh script (inherited if base has it, but ensuring it's here)
+RUN echo "#!/bin/bash\n/usr/bin/documentserver-generate-allfonts.sh\nsupervisorctl restart all" > /usr/local/bin/yehosoftdocs-refresh-fonts && \
+    chmod +x /usr/local/bin/yehosoftdocs-refresh-fonts
