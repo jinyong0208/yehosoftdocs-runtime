@@ -20,13 +20,14 @@ It is optimized for:
 - Community Edition compatible
 - Private deployment friendly
 
+````markdown id="jlwm193"
 ## Quick Start
 
-​
+```yaml
 onlyoffice:
-image: yehosoft/yehosoftdocs-runtime:8.3.3
-ports:
-"18010:80"
+  image: yehosoft/yehosoftdocs-runtime:8.3.3
+  ports:
+    - "18010:80"
 
 ## Font Mounting
 
