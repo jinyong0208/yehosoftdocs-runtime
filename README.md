@@ -28,7 +28,7 @@ onlyoffice:
   image: yehosoft/yehosoftdocs-runtime:8.3.3
   ports:
     - "18010:80"
-
+```
 ## Font Mounting
 
 Custom fonts can be mounted using:
