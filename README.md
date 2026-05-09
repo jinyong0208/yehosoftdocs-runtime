@@ -20,7 +20,6 @@ It is optimized for:
 - Community Edition compatible
 - Private deployment friendly
 
-````markdown id="jlwm193"
 ## Quick Start
 
 ```yaml
@@ -29,17 +28,20 @@ onlyoffice:
   ports:
     - "18010:80"
 ```
+
 ## Font Mounting
 
 Custom fonts can be mounted using:
 
-​
-./fonts:/usr/share/fonts/truetype/custom
+```yaml
+- ./fonts:/usr/share/fonts/truetype/custom
+```
 
 Refresh font cache:
 
-​
+```bash
 fc-cache -fv
+```
 
 ## Notes
 
